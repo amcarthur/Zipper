@@ -1,15 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using GitUIPluginInterfaces;
-using Ionic;
 using Ionic.Zip;
+using Ionic.Zlib;
 using ResourceManager;
-using Settings = GitCommands.AppSettings;
 
 namespace Zipper
 {
@@ -19,8 +15,8 @@ namespace Zipper
         {
             public string OutputPath { get; set; }
             public string SourcePath { get; set; }
-            public Ionic.Zlib.CompressionLevel CompressionLevel { get; set; }
-            public Ionic.Zip.CompressionMethod CompressionMethod { get; set; }
+            public CompressionLevel CompressionLevel { get; set; }
+            public CompressionMethod CompressionMethod { get; set; }
         }
 
         private enum ZipperBackgroundWorkerProgressEntryAction
@@ -77,6 +73,11 @@ namespace Zipper
             _entriesAdded = 0;
         }
 
+        private void ZipperForm_Load(object sender, EventArgs e)
+        {
+            PopulateBranches();
+        }
+
         private void PopulateBranches()
         {
             Branch_ComboBox.Items.Clear();
@@ -85,7 +86,7 @@ namespace Zipper
             string[] branchNames;
             branchNames = branches.Select(b => b.Name).Where(name => name.IsNotNullOrWhitespace()).ToArray();
 
-            Branch_ComboBox.Items.AddRange(branches.Select(b => b.Name).Where(name => name.IsNotNullOrWhitespace()).ToArray());
+            Branch_ComboBox.Items.AddRange(branchNames);
 
             for (int i = 0; i < branches.Count; ++i)
             {
@@ -294,20 +295,14 @@ namespace Zipper
                 if (!result.ExitedSuccessfully)
                 {
                     MessageBox.Show("An error occurred checking out the original branch: " + result.StdError, "Zipper Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
                 }
             }
 
             if (e.Error != null)
             {
                 MessageBox.Show(string.Format("An error occurred saving the Zip file: {0}", e.Error.Message), "Zipper Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                Zip_ProgressBar.Value = 0;
-                ZipStatus_Label.Text = "Ready";
-                Zip_Button.Enabled = true;
-                return;
             }
-
-            if (!e.Cancelled)
+            else if (!e.Cancelled)
             {
                 MessageBox.Show("Finished", "Zipper", MessageBoxButtons.OK);
             }
@@ -315,11 +310,6 @@ namespace Zipper
             Zip_ProgressBar.Value = 0;
             ZipStatus_Label.Text = "Ready";
             Zip_Button.Enabled = true;
-        }
-
-        private void ZipperForm_Load(object sender, EventArgs e)
-        {
-            PopulateBranches();
         }
     }
 }
